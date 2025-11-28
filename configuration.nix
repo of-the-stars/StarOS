@@ -6,18 +6,25 @@
   pkgs,
   inputs,
   lib,
+  hostname,
+  username,
   ...
-}: let
+}:
+let
   pkgsUnstable = import inputs.nixpkgs-unstable {
     inherit (pkgs.stdenv.hostPlatform) system;
     inherit (config.nixpkgs) config;
   };
-in {
+in
+{
   imports = [
-    ./nixos-modules/default.nix
+    ./nixos-modules
   ];
 
-  nix.settings.experimental-features = ["nix-command" "flakes"];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -36,11 +43,11 @@ in {
   };
 
   # Cleans up old unused files in the nix store automatically, since they can take up a lot of disk space if left untouched
-  # nix.gc = {
-  #   automatic = true;
-  #   dates = "weekly";
-  #   options = "--delete-older-than 30d";
-  # };
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
+  };
 
   nix.settings.auto-optimise-store = true;
 
@@ -51,7 +58,11 @@ in {
     nvidia.modesetting.enable = true;
   };
 
-  networking.hostName = "computer"; # Define your hostname.
+  networking.hostName = "${hostname}"; # Define your hostname.
+  users.users.${username} = {
+    isNormalUser = true;
+    extraGroups = [ "networkmanager" ];
+  };
 
   # Enable networking
   networking.networkmanager.enable = true;
@@ -105,6 +116,7 @@ in {
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
+    jack.enable = true;
   };
 
   # Fonts
@@ -115,7 +127,7 @@ in {
   environment.localBinInPath = true;
 
   xdg.portal.enable = true;
-  xdg.portal.extraPortals = [pkgs.xdg-desktop-portal-gtk];
+  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
   # File system management
   services.gvfs.enable = true;
@@ -123,5 +135,5 @@ in {
 
   nixpkgs.config.allowUnfree = true;
 
-  environment.systemPackages = with pkgs; [];
+  environment.systemPackages = with pkgs; [ ];
 }
